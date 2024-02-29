@@ -1,0 +1,43 @@
+//Throttle on broker level when there is a data catching up needed
+After mount the new EBS from the console
+ip-10-50-111-158.ec2.internal
+
+in the OS, new mounted disk named nvme3n1
+
+lsblk
+1.sudo file -s /dev/nvme3n1
+
+//make the file system to ext4
+2.sudo mkfs -t ext4 /dev/nvme2n1
+lsblk
+
+2.5 stop kafka service before umount the disk or stop the zookeeper service
+   sudo /export/foundation/zookeeper/bin/zkServer.sh status
+
+//umount the disk, -l lazy unmount
+3.sudo umount -d /dev/nvme1n1
+       umount -l (force umount)
+
+//sudo mkdir /export1   
+
+4.sudo mount /dev/nvme2n1 /export1
+
+cd /export1
+
+sudo mkdir kafka-data
+
+sudo chown -R hadoop:hadoop kafka-data/    zookeeper-data/version-2/    用到了cp -r来操作
+
+5. sudo e2label /dev/nvme2n1 /export1
+
+6.sudo vim /etc/fstab      //change the label of the disk
+
+7. sudo mount -a
+
+or check 
+
+sudo e2label /dev/nvme3n1
+
+//we need to apply
+./kafka-configs.sh --zookeeper zookeeper5.eu-west-2.prd.bizcom.aws.fwmrm.net:2181/kafka --entity-type brokers --entity-name
+for i in {0 100 200}; do ./kafka-configs.sh --zookeeper zookeeper5.eu-west-2.prd.bizcom.aws.fwmrm.net:2181/kafka --entity-type brokers --entity-name $i --alter --add-config leader.replication.throttled.rate=65000000,follower.replication.throttled.rate=65000000"; done
